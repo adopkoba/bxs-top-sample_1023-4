@@ -54,6 +54,7 @@ python3 -m http.server 8095
 |---|---|---|
 | MV スライド | `.js-mvSlide img` | 4枚をクロスフェード（4秒表示・1.2秒フェード）。写真は Figma「PC_トップページ_C」の HeroImage_Fade_Slideshow_C（`8268:19197`）。キャッチ（`.js-mvCatch`）は黒文字で、4枚目の写真のときだけ `.is-white` で白（1.2秒で切替。`WHITE_CATCH_SLIDE`） |
 | 固定 CTA の切替 | `#fvCta` / `#sideCta` | MV の下端が FV-CTA の下端より上に来たら、FV-CTA を消して MV 以降 CTA（右端タブ）を出す。タブは 85px のアイコン部分だけ見せ、hover で 190px の白いパネルが左へスライド（Figma「Group 833」） |
+| 固定 CTA の上端 | `--cta-top`（base.css :root） | FV-CTA と MV 以降 CTA の上端は共通の 24.5rem（1366px で y245）。どの画面幅でもそろう |
 | MV 写真の固定 | `.mvSlide`（position: fixed） | 写真は画面に固定。英字ループと背景グラデがその上をスクロールしていく（Figma プロトタイプどおり） |
 | 英字ループ | `.js-loopTrack` | 画面幅以上になるよう文を複製し、同じ組を2つつないで右→左へ無限ループ（大画面でも途切れない。文字の上端は帯の上端から 13px（Figma どおり。SP は上下中央）、文の間隔＝文字サイズは前回と同じ、不透明度 60%（Figma どおり）で、文字サイズだけ 2026-10-13 カンプの大きさ（PC 90px／SP 46px）。速さも前回と同じ見た目になるよう文1つあたり PC 67秒／SP 41秒） |
 | 背景 | `.js-gradArea` / `.js-gradBg` | 固定写真の上に背景ぼかし 10px＋画面に貼り付く白レイヤー。白 80% → スクロールで徐々に白ベタ（ページ上端から 1305px かけて） |

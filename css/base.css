@@ -37,6 +37,7 @@
 	--font-num: "Inter", sans-serif; /* 数字（拠点数・番号・日付・電話番号）。Figma 1013／1022 カンプで番号・日付・電話番号も Inter に */
 
 	--header-h: 8.6rem;
+	--cta-top: 24.5rem; /* 固定 CTA（FV-CTA・MV 以降 CTA）の上端。両方この値を使い、どの画面幅でもそろう（Figma：FV-CTA y245） */
 }
 @media all and (max-width: 896px) {
 	:root {
@@ -447,7 +448,7 @@ button {
 ------------------------------------------------------------*/
 .sideCta {
 	position: fixed;
-	top: 32.7rem; /* Figma「Group 833」：MV 下端（892）から 327px。2026-10-23 午後ユーザー指示で 1022-2 の位置に戻した */
+	top: var(--cta-top); /* FV-CTA の上端にそろえる（2026-10-23 ユーザー指示。旧 32.7rem） */
 	right: 0;
 	z-index: 90;
 	width: 27.5rem;
