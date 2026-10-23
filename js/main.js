@@ -174,7 +174,10 @@
 		横に流れるカルーセル（コンテンツ一覧・文化シヤッターグループ共通。.js-loopSlider）
 		- 各カードに「現在のカードから何枚目か」k を --k で入れ、CSS が left を計算して並べる（ループ）
 		  k = 0, ±1 … 表示 ／ ±2 … 40% ／ それ以外 … 非表示（Figma「サービスカルーセル 1013」）
-		- 端から反対側へ回り込むカードは、その瞬間だけアニメなしで移動させる
+		- 端から反対側へ回り込むカードは、見えない位置（k = ±3）を経由させて、左右どちらもふわっと消える・現れるようにする
+		  （2026-10-23 ユーザー指示：左端が回り込むときにパッと消えていたのを、右側と同じフェードに）
+		  ・左端（k = -2）が出ていく：さらに左（k = -3、透明）へ 0.5 秒で動かしてから、アニメなしで右の見えない位置へ
+		  ・左端へ入ってくる：アニメなしで左の見えない位置（k = -3）に置いてから、0.5 秒で k = -2 へ
 		- 前後ボタン・スワイプで 0.5 秒移動。進捗バーは現在の位置
 		- data-auto="4000" を付けると 4 秒ごとに自動で次へ（hover・フォーカス中・画面外・タブ非表示では停止）
 	------------------------------------------------------------*/
@@ -191,14 +194,36 @@
 			if (k > Math.ceil((n - 1) / 2)) k -= n;
 			return k;
 		}
+		// 位置 k に置く（|k| ≤ 1 は表示、2 は 40%、それ以外は透明）
+		function place(item, k) {
+			item.style.setProperty('--k', k);
+			item.classList.toggle('is-near', Math.abs(k) <= 1);
+			item.classList.toggle('is-side', Math.abs(k) === 2);
+		}
+		// アニメなしで置く（transition を一瞬切って、反映させてから戻す）
+		function placeNow(item, k) {
+			item.classList.add('no-anim');
+			place(item, k);
+			void item.offsetWidth;
+			item.classList.remove('no-anim');
+		}
 		function render() {
 			items.forEach(function (item, i) {
 				var k = kOf(i);
-				// 反対側へ回り込むカードはアニメなし
-				item.classList.toggle('no-anim', prevK[i] !== undefined && Math.abs(k - prevK[i]) > 1);
-				item.style.setProperty('--k', k);
-				item.classList.toggle('is-near', Math.abs(k) <= 1);
-				item.classList.toggle('is-side', Math.abs(k) === 2);
+				var pk = prevK[i];
+				clearTimeout(item._wrapTimer);
+				if (pk === undefined || Math.abs(k - pk) <= 1) {
+					item.classList.remove('no-anim');
+					place(item, k);
+				} else if (k > pk) {
+					// 左端から出ていく：左の見えない位置へフェードしながら動かし、終わったら右の見えない位置へ
+					place(item, pk - 1);
+					item._wrapTimer = setTimeout(function () { placeNow(item, k); }, 500);
+				} else {
+					// 左端へ入ってくる：左の見えない位置から動かす
+					placeNow(item, k - 1);
+					place(item, k);
+				}
 				var link = item.querySelector('a');
 				var visible = Math.abs(k) <= 2;
 				link.tabIndex = visible ? 0 : -1;
@@ -271,7 +296,8 @@
 		- 白の濃さ：エリア上端 0.8 → エリア上端から 1305px（Figma の 36.8%）で 1（白ベタ）
 		  画面の上端・下端それぞれの位置の濃さを --bg-top / --bg-bottom に入れる
 		- 丸く広がる背景（.js-dome）：参考 alvamososaka.com の黄色い丸を計測した動きに合わせる
-		  ・形は「円の上半分＋円の中心から下は全面」（カンプのドームと同じ。円の下端が見えないように）
+		  ・形は「楕円の上半分＋中心から下は全面」（円の下端が見えないように）
+		    楕円の縦横比は 2026-10-23 カンプ（Frame 769 の Ellipse 21：3116×1799）と同じ 0.577。真円よりカーブが緩やか
 		  ・始まり：円の上端（エリアの上端から 400px 下）が画面の下端に来たとき。直径は画面幅の 74%
 		  ・スクロール量 画面の高さ×2.2 かけて、イーズアウトで 3 倍に拡大しながら中心が画面幅の 48.8% 上へ（参考サイトと同じ比率）
 		  ・円が横幅いっぱいを超えたら、左右の端で円と交わる高さより下を全面にする
@@ -282,6 +308,7 @@
 	var domeArea = document.querySelector('.js-domeArea');
 	var dome = document.querySelector('.js-dome');
 	var newsSec = document.getElementById('news');
+	var DOME_RY = 1799 / 3116; // 楕円の縦の半径 ÷ 横の半径（Figma の Ellipse 21）
 	function remPx() {
 		return parseFloat(getComputedStyle(document.documentElement).fontSize) || 10;
 	}
@@ -304,20 +331,21 @@
 			var start = 40 * remPx(); // 円の上端の開始位置：エリアの上端から 400px 下（ユーザー指示）
 			var t = Math.min(1, Math.max(0, (vh - areaTop - start) / (vh * 2.2)));
 			var e = 1 - Math.pow(1 - t, 2.3);
-			var r = w * 0.37 * (1 + 2 * e);
-			var cy = off + start + w * 0.37 - w * 0.488 * e; // .dome の座標での円の中心
+			var r = w * 0.37 * (1 + 2 * e); // 横の半径
+			var ry = r * DOME_RY;            // 縦の半径
+			var cy = off + start + w * 0.37 * DOME_RY - w * 0.488 * e; // .dome の座標での楕円の中心（始まりは上端がエリア上端＋start）
 			var path;
 			if (r < w / 2) {
-				// 円が横幅より小さい：円の上半分＋その真下の長方形
-				path = 'M' + (w / 2 - r) + ',' + cy + ' A' + r + ',' + r + ' 0 0 1 ' + (w / 2 + r) + ',' + cy +
+				// 楕円が横幅より小さい：楕円の上半分＋その真下の長方形
+				path = 'M' + (w / 2 - r) + ',' + cy + ' A' + r + ',' + ry + ' 0 0 1 ' + (w / 2 + r) + ',' + cy +
 					' L' + (w / 2 + r) + ',' + h + ' L' + (w / 2 - r) + ',' + h + ' Z';
 			} else {
-				// 円が横幅を超えた：左右の端と円が交わる高さから下は全面
-				var ys = cy - Math.sqrt(r * r - (w / 2) * (w / 2));
-				path = 'M0,' + ys + ' A' + r + ',' + r + ' 0 0 1 ' + w + ',' + ys + ' L' + w + ',' + h + ' L0,' + h + ' Z';
+				// 楕円が横幅を超えた：左右の端と楕円が交わる高さから下は全面
+				var ys = cy - ry * Math.sqrt(1 - (w / 2 / r) * (w / 2 / r));
+				path = 'M0,' + ys + ' A' + r + ',' + ry + ' 0 0 1 ' + w + ',' + ys + ' L' + w + ',' + h + ' L0,' + h + ' Z';
 			}
 			dome.style.clipPath = 'path("' + path.replace(/(\d+\.\d)\d+/g, '$1') + '")';
-			// 色の切替：お知らせの上端が画面の 60% まで来たら #C0ECDF（初回版と同じ。CSS で 1 秒フェード）
+			// 色の切替：お知らせの上端が画面の 60% まで来たら #B2D6E8（初回版と同じタイミング。CSS で 1 秒フェード）
 			dome.classList.toggle('is-news', !!newsSec && newsSec.getBoundingClientRect().top < vh * 0.6);
 		}
 	}

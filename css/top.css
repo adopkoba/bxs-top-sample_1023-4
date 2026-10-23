@@ -1086,10 +1086,11 @@
 
 /*------------------------------------------------------------
 	丸く広がる背景（形と動きは Figma「Frame 769」をもとに。色はグラデではなく、初回版（コーディング/）と同じスクロールでの色切替：
-	#C1E6F3 → お知らせの上端が画面の 60% まで来たら #C0ECDF に 1 秒でフェード。2026-10-22 ユーザー指示）
+	#E1EFF6 → お知らせの上端が画面の 60% まで来たら #B2D6E8 に 1 秒でフェード。2026-10-22 ユーザー指示。
+	色は 2026-10-23 カンプ（Frame 769 のグラデの始点 #E1EFF6・終点 #B2D6E8）を、スクロールでの切替の始点・終点として使用。旧：#C1E6F3 → #C0ECDF）
 	コンテンツ一覧〜文化シヤッターグループの後ろ。参考 alvamososaka.com の黄色い丸と同じ動き：
-	エリアが画面の下から入ってくると、真円が下から現れ、スクロールに合わせて拡大しながら上がり、最後は全面を塗る。
-	形は「円の上半分＋その下は全面」。js/main.js が clip-path: path() で毎フレーム入れる。
+	エリアが画面の下から入ってくると、丸が下から現れ、スクロールに合わせて拡大しながら上がり、最後は全面を塗る。
+	形は「楕円の上半分＋その下は全面」（2026-10-23 カンプ：真円ではなく横長の楕円 3116×1799＝高さは幅の 0.577 倍。カーブが緩やか）。js/main.js が clip-path: path() で毎フレーム入れる。
 	円はエリアの上へはみ出して前のセクションの後ろまで広がる（.dome を --ext だけ上へ広げてある）
 ------------------------------------------------------------*/
 #main .gradArea > .domeArea {
@@ -1107,7 +1108,7 @@
 	left: 0;
 	z-index: 0;
 	width: 100%;
-	background: #c1e6f3;
+	background: #e1eff6;
 	clip-path: inset(100% 0 0 0); /* 最初は見せない（形は js/main.js が clip-path: path() で入れる） */
 }
 /* お知らせに来たら重ねる色（js/main.js が .dome に .is-news を付け外し） */
@@ -1115,7 +1116,7 @@
 	content: "";
 	position: absolute;
 	inset: 0;
-	background: #c0ecdf;
+	background: #b2d6e8;
 	opacity: 0;
 	transition: opacity 1s ease;
 }
@@ -1173,7 +1174,7 @@
 	position: absolute;
 	top: 2.9rem;
 	left: 0;
-	width: 94rem;
+	width: 96.4rem; /* 2026-10-23 カンプ：940 → 964px（青いバーは 1/6 の約 161px） */
 	height: 0.4rem;
 	overflow: hidden;
 	background: #fff;
@@ -1192,12 +1193,13 @@
 	transform: translateX(calc(var(--i) * 100%));
 	transition: transform 0.5s ease-in-out;
 }
-/* 進む・戻る（Figma「btn-arrow-1022」）：白い丸＋青い三角。hover で丸が #0077BE・三角が白（0.3s ease-out） */
+/* 進む・戻る（Figma「btn-arrow-1023」8466:18152）：50px の白い丸＋青い三角 15×17。hover で丸が #009CE5・三角が白（0.3s ease-out）
+   62px（btn-arrow-1022）から縮小。中心の高さは前と同じ（上から 6px） */
 #main .slideBtn {
 	position: absolute;
-	top: 0;
-	width: 6.2rem;
-	height: 6.2rem;
+	top: 0.6rem;
+	width: 5rem;
+	height: 5rem;
 	background: #fff;
 	border-radius: 50%;
 	transition: background-color 0.3s ease-out;
@@ -1205,7 +1207,7 @@
 #main .slideBtn::before {
 	content: "";
 	position: absolute;
-	/* Figma：62px の丸の中、左 25・上 20 に 18×21 の三角（SP で丸が小さくなっても同じ比率） */
+	/* Figma：50px の丸の中、左 20.16・上 16.13 に 14.52×16.94 の三角（比率で指定） */
 	top: 32.26%;
 	left: 40.32%;
 	width: 29.03%;
@@ -1219,12 +1221,12 @@
 	right: 0;
 }
 #main .slideBtn.prev {
-	right: 7.6rem;
+	right: 6.4rem; /* Figma：戻る 1129／進む 1193（間 14px） */
 	transform: scaleX(-1);
 }
 @media all and (min-width: 897px) {
 	#main .slideBtn:hover {
-		background: var(--color-hover);
+		background: var(--color-blue);
 	}
 	#main .slideBtn:hover::before {
 		background: #fff;
@@ -1239,8 +1241,7 @@
 		width: calc(100% - 13rem);
 	}
 	#main .slideBtn {
-		width: 5rem;
-		height: 5rem;
+		top: 0;
 	}
 	#main .slideBtn.prev {
 		right: 6rem;
@@ -1619,7 +1620,7 @@
 ------------------------------------------------------------*/
 .fvCta {
 	position: fixed;
-	top: 24.5rem;
+	top: calc(var(--header-h) + 6rem + 3.2rem); /* 重要なお知らせ（.newsBar 高さ 6rem）の下端から 32px（2026-10-23 ユーザー指示。旧 24.5rem） */
 	right: 1.9rem; /* 2026-10-22 C 案：右端から 19px（前回 20px） */
 	z-index: 90;
 	width: 20rem;
